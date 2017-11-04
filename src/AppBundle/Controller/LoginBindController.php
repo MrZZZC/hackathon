@@ -239,7 +239,6 @@ class LoginBindController extends BaseController
         //     'name' => 'sssssss',
         // );
         $oauthUser['createdIp'] = $request->getClientIp();
-        var_dump($oauthUser);
         if (empty($oauthUser['id'])) {
             $response = array('success' => false, 'message' => '网络超时，获取用户信息失败，请重试。');
             goto response;

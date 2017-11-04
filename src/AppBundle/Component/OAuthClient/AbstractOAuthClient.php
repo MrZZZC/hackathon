@@ -31,7 +31,7 @@ abstract class AbstractOAuthClient
      *
      * @return string
      */
-    public function postRequest($url, $params)
+    public function postRequest($url, $params, $results = array())
     {
         $curl = curl_init();
 
@@ -41,6 +41,20 @@ abstract class AbstractOAuthClient
         curl_setopt($curl, CURLOPT_TIMEOUT, $this->timeout);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_HEADER, 0);
+        if (is_array($results)) {
+            $header = array();
+            foreach($results as $key => $parsed_urlvalue) {
+                $header[] = "$key: $parsed_urlvalue";
+            }
+            $curl_options[CURLOPT_HTTPHEADER] = $header;
+            curl_setopt_array($curl, $curl_options);
+        }
+
+        // if (!empty($params['header'])) {
+        //     // curl_setopt($curl, CURLOPT_HTTPHEADER, $params['header']);
+        //     curl_setopt($curl, CURLOPT_HEADER, $params['header']);
+        //     unset($params['header']);
+        // }
         curl_setopt($curl, CURLOPT_POST, 1);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
         curl_setopt($curl, CURLOPT_URL, $url);

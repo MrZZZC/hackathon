@@ -1,43 +1,54 @@
 <?php
 
 namespace AppBundle\Component\OAuthClient;
+use AppBundle\Common\CurlToolkit;
 
 class EdusohoAuthClient extends AbstractOAuthClient
 {
     const USERINFO_URL = 'http://webdubilin-pay.st.edusoho.cn/me';
-    const AUTHORIZE_URL = 'http://webdubilin-pay.st.edusoho.cn/ouath/authorize?';
-    const OAUTH_TOKEN_URL = 'http://webdubilin-pay.st.edusoho.cn/ouath/token';
+    const AUTHORIZE_URL = 'http://webdubilin-pay.st.edusoho.cn/oauth/authorize?';
+    const OAUTH_TOKEN_URL = 'http://webdubilin-pay.st.edusoho.cn/oauth/token';
 
     public function getAuthorizeUrl($callbackUrl)
     {
         $params = array();
-        $params['appid'] = $this->config['key'];
+        $params['client_id'] = $this->config['key'];
         $params['response_type'] = 'code';
         $params['redirect_uri'] = $callbackUrl;
-        $params['scope'] = 'client_credentials';
+        $params['state'] = 'sdf';
 
-        return self::AUTHORIZE_URL.http_build_query($params);
+        $url = self::AUTHORIZE_URL.http_build_query($params);
+
+        return $url;
     }
 
     public function getAccessToken($code, $callbackUrl)
     {
         $params = array(
-            'appid' => $this->config['key'],
-            'secret' => $this->config['secret'],
             'code' => $code,
             'grant_type' => 'authorization_code',
+            'redirect_uri' => $callbackUrl
         );
-        $result = $this->getRequest(self::OAUTH_TOKEN_URL, $params);
+
+        $header = $this->config['key'] . ':' . $this->config['secret'];
+        $result = array(
+           'Authorization' => 'Basic '.base64_encode($header),
+        );
+
+        $result = $this->postRequest(self::OAUTH_TOKEN_URL, $params, $result);
+        // $result = CurlToolkit::request('post', self::OAUTH_TOKEN_URL, $params);
+        // var_dump($params);
+        var_dump($result);
         $rawToken = array();
         $rawToken = json_decode($result, true);
+        var_dump($rawToken);
         $userInfo = $this->getUserInfo($rawToken);
-
+        var_dump($userInfo);exit();
         return array(
             'userId' => $userInfo['id'],
             'expiredTime' => $rawToken['expires_in'],
             'access_token' => $rawToken['access_token'],
             'token' => $rawToken['access_token'],
-            'openid' => $rawToken['openid'],
         );
     }
 
@@ -45,9 +56,8 @@ class EdusohoAuthClient extends AbstractOAuthClient
     {
         $params = array('access_token' => $token['access_token']);
         $params = array(
-            'openid' => $token['openid'],
             'access_token' => $token['access_token'],
-            'lang' => 'zh_CN', );
+        );
         $result = $this->getRequest(self::USERINFO_URL, $params);
         return json_decode($result, true);
     }

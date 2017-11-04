@@ -42,7 +42,7 @@ class EdusohoAuthClient extends AbstractOAuthClient
         $rawToken = json_decode($result, true);
         $userInfo = $this->getUserInfo($rawToken);
         return array(
-            'userId' => $userInfo['id'],
+            'userId' => $userInfo['globalId'],
             'expiredTime' => $rawToken['expires_in'],
             'access_token' => $rawToken['access_token'],
             'token' => $rawToken['access_token'],

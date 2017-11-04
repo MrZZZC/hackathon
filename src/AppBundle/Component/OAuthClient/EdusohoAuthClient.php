@@ -56,6 +56,13 @@ class EdusohoAuthClient extends AbstractOAuthClient
             'access_token' => $token['access_token'],
         );
         $result = $this->getRequest(self::USERINFO_URL, $params);
-        return json_decode($result, true);
+        $result = json_decode($result, true);
+
+        $result['id'] = $result['globalId'];
+        if (isset($result['avatar'])) {
+            unset($result['avatar']);
+        }
+
+        return $result;
     }
 }

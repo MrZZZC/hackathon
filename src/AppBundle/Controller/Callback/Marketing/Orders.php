@@ -27,15 +27,27 @@ class Orders extends MarketingBase
             $response = array();
             $isNew = false;
             $mobile = $postData['mobile'];
-            $user = $this->getUserService()->getUserByVerifiedMobile($mobile);
-            if (empty($user)) {
-                $logger->debug('根据手机：'.$mobile.',没有查询到用户，准备创建用户');
-                $isNew = true;
+
+            //通过 user_bind 表来查询是否存在。走绑定方式
+            // $user = $this->getUserService()->getUserByVerifiedMobile($mobile);
+            // if (empty($user)) {
+            //     $logger->debug('根据手机：'.$mobile.',没有查询到用户，准备创建用户');
+            //     $isNew = true;
+            //     $password = substr($mobile, mt_rand(0, 4), 6);
+            //     $postData['password'] = $password;
+            //     $response['password'] = $password;
+            //     $user = $this->createUserFromMarketing($postData, $request);
+            // }
+            $bind = $this->getUserService()->getUserBindByTypeAndFromId('weixinweb', $postData['global_id']);
+            if (!$bind) {
                 $password = substr($mobile, mt_rand(0, 4), 6);
                 $postData['password'] = $password;
                 $response['password'] = $password;
                 $user = $this->createUserFromMarketing($postData, $request);
+            } else {
+                $user = $this->getUserService()->getUser($bind['toId']);
             }
+
             $response['user_id'] = $user['id'];
             $response['is_new'] = $isNew;
 
@@ -67,9 +79,9 @@ class Orders extends MarketingBase
     {
         $biz = $this->getBiz();
         $logger = $biz['logger'];
-        $token = $this->getTokenService()->makeToken('marketing', array(
+        $token = $this->getTokenService()->makeToken('weixinweb', array(
             'data' => array(
-                'type' => 'marketing',
+                'type' => 'weixinweb',
             ),
             'times' => 1,
             'duration' => 3600,
@@ -77,6 +89,7 @@ class Orders extends MarketingBase
             ));
 
         $registration['token'] = $token;
+        $registration['id'] = $registration['global_id'];
         $registration['verifiedMobile'] = $postData['mobile'];
         $registration['mobile'] = $postData['mobile'];
         $registration['nickname'] = $postData['nickname'];
@@ -86,9 +99,9 @@ class Orders extends MarketingBase
         $registration['registeredWay'] = 'web';
         $registration['createdIp'] = $request->getClientIp();
         $registration['password'] = $postData['password'];
-        $registration['type'] = 'marketing';
+        $registration['type'] = 'weixinweb';
 
-        $user = $this->getAuthService()->register($registration, 'marketing');
+        $user = $this->getAuthService()->register($registration, 'weixinweb');
 
         return $user;
     }

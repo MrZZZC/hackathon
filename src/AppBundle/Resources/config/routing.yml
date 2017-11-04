@@ -2946,3 +2946,11 @@ v2_demo:
 v2_demo_modal:
     path: /v2/demo/modal
     defaults: { _controller: AppBundle:V2:modal }
+
+oauth_login:
+    path: /oauth/login
+    defaults: { _controller: AppBundle:Login:oauthLogin }
+
+oauth_call_back:
+    path: /oauth/call_back
+    defaults: { _controller: AppBundle:Login:oauthCallBack }

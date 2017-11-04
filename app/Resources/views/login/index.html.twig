@@ -44,6 +44,7 @@
         </div>
         <div class="form-group mbl">
           <button type="button" class="btn btn-primary btn-lg btn-block js-btn-login">{{ 'user.login.submit_button'|trans }}</button>
+          <a href="{{ path('oauth_login') }}" class="btn btn-primary btn-lg btn-block">{{ '微信登录'|trans }}</a>
         </div>
 
         <input type="hidden" name="_target_path" value="{{ _target_path }}">

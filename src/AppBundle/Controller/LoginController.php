@@ -5,6 +5,7 @@ namespace AppBundle\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Security;
 use AppBundle\Component\OAuthClient\OAuthClientFactory;
+use AppBundle\Component\OAuthClient\EdusohoAuthClient;
 
 class LoginController extends BaseController
 {
@@ -32,6 +33,33 @@ class LoginController extends BaseController
             'error' => $error,
             '_target_path' => $this->getTargetPath($request),
         ));
+    }
+
+    public function oauthLoginAction(Request $request)
+    {
+        $config = array(
+            'key' => $this->container->getParameter('edusoho_oauth_client_id'),
+            'secret' => $this->container->getParameter('edusoho_oauth_client_secret')
+        );
+
+        $client = new EdusohoAuthClient($config);
+
+        $loginCallBack = $this->generateUrl('oauth_call_back');
+
+        $authorizeUrl = $client->getAuthorizeUrl($loginCallBack);
+
+        return $this->redirect($authorizeUrl);
+    }
+
+    public function oauthCallBackAction(Request $request)
+    {
+        $code = $request->query->get('code');
+
+        $client = new EdusohoAuthClient($config);
+
+        $token = $client->getAccessToken($code, $loginCallBack);
+
+        return $this->redirect($this->generateUrl('homepage'));
     }
 
     public function ajaxAction(Request $request)

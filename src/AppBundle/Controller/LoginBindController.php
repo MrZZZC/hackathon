@@ -272,7 +272,7 @@ class LoginBindController extends BaseController
         $redirectUrl = $this->generateUrl('register_success', array(
             'goto' => $this->getTargetPath($request),
         ));
-        $response = array('success' => true, '_target_path' => $redirectUrl);
+        $response = array('success' => true, '_target_path' => '/');
 
         response:
         return $this->createJsonResponse($response);

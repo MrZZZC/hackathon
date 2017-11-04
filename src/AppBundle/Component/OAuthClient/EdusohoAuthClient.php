@@ -38,12 +38,9 @@ class EdusohoAuthClient extends AbstractOAuthClient
         $result = $this->postRequest(self::OAUTH_TOKEN_URL, $params, $result);
         // $result = CurlToolkit::request('post', self::OAUTH_TOKEN_URL, $params);
         // var_dump($params);
-        var_dump($result);
         $rawToken = array();
         $rawToken = json_decode($result, true);
-        var_dump($rawToken);
         $userInfo = $this->getUserInfo($rawToken);
-        var_dump($userInfo);exit();
         return array(
             'userId' => $userInfo['id'],
             'expiredTime' => $rawToken['expires_in'],

@@ -10,6 +10,7 @@ use Biz\User\Service\UserService;
 use AppBundle\Common\SimpleValidator;
 use Symfony\Component\HttpFoundation\Request;
 use AppBundle\Component\OAuthClient\OAuthClientFactory;
+use AppBundle\Component\OAuthClient\EdusohoAuthClient;
 
 class LoginBindController extends BaseController
 {
@@ -111,7 +112,7 @@ class LoginBindController extends BaseController
             $message = $e->getMessage();
 
             if ($message == 'unaudited') {
-                $this->setFlashMessage('danger', $this->get('translator')->trans('user.bind.unaudited', array('%name%' => $clientMeta['name'])));
+                $this->setFlashMessage('danger', $this->get('translator')->trans('user.bind.unaudited', array('%name%' => '微信网页登录接口')));
             } elseif ($message == 'unAuthorize') {
                 return $this->redirect($this->generateUrl('login'));
             } else {
@@ -227,8 +228,16 @@ class LoginBindController extends BaseController
             goto response;
         }
 
-        $client = $this->createOAuthClient($type);
+        $config = array(
+            'key' => $this->container->getParameter('edusoho_oauth_client_id'),
+            'secret' => $this->container->getParameter('edusoho_oauth_client_secret')
+        );
+        $client = new EdusohoAuthClient($config);
         $oauthUser = $client->getUserInfo($token);
+        // $oauthUser = array(
+        //     'id' => '22222',
+        //     'name' => 'sssssss',
+        // );
         $oauthUser['createdIp'] = $request->getClientIp();
 
         if (empty($oauthUser['id'])) {

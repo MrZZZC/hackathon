@@ -46,6 +46,8 @@ class LoginController extends BaseController
 
         $loginCallBack = $this->generateUrl('oauth_call_back');
 
+        // return $this->redirect($loginCallBack);
+
         $authorizeUrl = $client->getAuthorizeUrl($loginCallBack);
 
         return $this->redirect($authorizeUrl);
@@ -55,11 +57,98 @@ class LoginController extends BaseController
     {
         $code = $request->query->get('code');
 
+        $config = array(
+            'key' => $this->container->getParameter('edusoho_oauth_client_id'),
+            'secret' => $this->container->getParameter('edusoho_oauth_client_secret')
+        );
+
         $client = new EdusohoAuthClient($config);
 
         $token = $client->getAccessToken($code, $loginCallBack);
+        // $token = array(
+        //     'userId' => '22222',
+        //     'expiredTime' => 0,
+        //     'access_token' => 'sssss',
+        //     'token' => 'sssss',
+        //     'openid' =>'2323',
+        // );
+
+        $bind = $this->getUserService()->getUserBindByTypeAndFromId('weixinweb', $token['userId']);
+
+        $request->getSession()->set('oauth_token', $token);
+
+        if ($bind) {
+            $user = $this->getUserService()->getUser($bind['toId']);
+
+            if (empty($user)) {
+                $this->setFlashMessage('danger', 'user.bind.bind_user_not_exist');
+
+                return $this->redirect($this->generateUrl('register'));
+            }
+
+            $this->authenticateUser($user);
+
+            if ($this->getAuthService()->hasPartnerAuth()) {
+                return $this->redirect($this->generateUrl('partner_login', array('goto' => $this->getTargetPath($request))));
+            } else {
+                $goto = $this->getTargetPath($request);
+
+                return $this->redirect($goto);
+            }
+        } else {
+            return $this->forward('AppBundle:Login:choose', array(
+                'request' => $request,
+                'type' => 'weixinweb',
+            ));
+        }
 
         return $this->redirect($this->generateUrl('homepage'));
+    }
+
+    public function chooseAction(Request $request, $type)
+    {
+        $token = $request->getSession()->get('oauth_token');
+        $inviteCode = $request->query->get('inviteCode', '');
+        $inviteUser = $inviteCode ? $inviteUser = $this->getUserService()->getUserByInviteCode($inviteCode) : array();
+
+        $config = array(
+            'key' => $this->container->getParameter('edusoho_oauth_client_id'),
+            'secret' => $this->container->getParameter('edusoho_oauth_client_secret')
+        );
+
+        $client = new EdusohoAuthClient($config);
+
+        try {
+            $oauthUser = $client->getUserInfo($token);
+            // $oauthUser = array(
+            //     'name' => 'sssssss',
+            //     'avatar' => 'http://ubmcmm.baidustatic.com/media/v1/0f0002tSZ9kts9soN9r_sf.jpg',
+            // );
+            $oauthUser['name'] = preg_replace('/[^\x{4e00}-\x{9fa5}a-zA-z0-9_.]+/u', '', $oauthUser['name']);
+            $oauthUser['name'] = str_replace(array('-'), array('_'), $oauthUser['name']);
+        } catch (\Exception $e) {
+            $message = $e->getMessage();
+
+            if ($message == 'unaudited') {
+                $this->setFlashMessage('danger', $this->get('translator')->trans('user.bind.unaudited', array('%name%' => $clientMeta['name'])));
+            } elseif ($message == 'unAuthorize') {
+                return $this->redirect($this->generateUrl('login'));
+            } else {
+                $this->setFlashMessage('danger', $this->get('translator')->trans('user.bind.error', array('%message%' => $message)));
+            }
+
+            return $this->redirect($this->generateUrl('login'));
+        }
+
+        $name = '微信注册帐号';
+
+        return $this->render('login/bind-choose.html.twig', array(
+            'inviteUser' => $inviteUser,
+            'oauthUser' => $oauthUser,
+            'type' => $type,
+            'name' => $name,
+            'hasPartnerAuth' => $this->getAuthService()->hasPartnerAuth(),
+        ));
     }
 
     public function ajaxAction(Request $request)
@@ -128,5 +217,10 @@ class LoginController extends BaseController
     protected function getWebExtension()
     {
         return $this->container->get('web.twig.extension');
+    }
+
+    protected function getAuthService()
+    {
+        return $this->getBiz()->service('User:AuthService');
     }
 }

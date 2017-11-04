@@ -65,6 +65,7 @@ class LoginController extends BaseController
         $client = new EdusohoAuthClient($config);
         $loginCallBack = $this->generateUrl('oauth_call_back', array(), true);
 
+
         $token = $client->getAccessToken($code, $loginCallBack);
         // $token = array(
         //     'userId' => '22222',

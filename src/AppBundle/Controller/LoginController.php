@@ -93,9 +93,7 @@ class LoginController extends BaseController
             if ($this->getAuthService()->hasPartnerAuth()) {
                 return $this->redirect($this->generateUrl('partner_login', array('goto' => $this->getTargetPath($request))));
             } else {
-                $goto = $this->getTargetPath($request);
-
-                return $this->redirect($goto);
+                return $this->redirect($this->generateUrl('homepage'));
             }
         } else {
             return $this->forward('AppBundle:Login:choose', array(
